@@ -143,7 +143,7 @@ resource "aws_key_pair" "jlowry" {
 
 resource "aws_instance" "bastion" {
   connection {
-    user = "ec2-user"
+    user = "centos"
   }
 
   instance_type			= "t2.micro"
@@ -151,6 +151,12 @@ resource "aws_instance" "bastion" {
   key_name			= "${aws_key_pair.jlowry.id}"
   vpc_security_group_ids	= ["${aws_security_group.bastionhost.id}"]
   subnet_id			= "${aws_subnet.default.id}"
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum -y update",
+    ]
+  }
 
   tags	= {
     Name	= "bastion"
