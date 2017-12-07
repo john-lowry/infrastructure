@@ -89,6 +89,16 @@ resource "aws_security_group" "basic" {
     cidr_blocks	= ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port	= 22
+    to_port	= 22
+    protocol	= "tcp"
+    security_groups	= [
+			"${aws_security_group.bastionhost.id}"
+			]
+  }
+    
+
   tags = {
     Name	= "basic"
     env		= "PROD"
@@ -112,16 +122,6 @@ resource "aws_security_group" "bastionhost" {
     to_port	= 0
     protocol	= "icmp"
     cidr_blocks	= ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port		= 22
-    to_port		= 22
-    protocol		= "tcp"
-    security_groups	= [
-			"${aws_security_group.basic.id}",
-			"${aws_security_group.proxy.id}"
-			]
   }
   
   egress {
@@ -152,11 +152,6 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids	= ["${aws_security_group.bastionhost.id}"]
   subnet_id			= "${aws_subnet.default.id}"
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo yum -y update",
-    ]
-  }
 
   tags	= {
     Name	= "bastion"
@@ -164,4 +159,25 @@ resource "aws_instance" "bastion" {
   }
 }
 
+resource "aws_instance" "proxy" {
+  connection {
+    user = "centos"
+    bastion_host = "${aws_instance.bastion.associate_public_ip_address}"
+  }
+
+  instance_type			= "t2.micro"
+  ami				= "ami-0c2aba6c"
+  key_name			= "${aws_key_pair.jlowry.id}"
+  vpc_security_group_ids	= [
+				"${aws_security_group.proxy.id}",
+				"${aws_security_group.basic.id}"
+				]
+  subnet_id			= "${aws_subnet.default.id}"
+  count				= 2
+
+  tags	= {
+    Name	= "proxy"
+    env		= "PROD"
+  }
+}
 

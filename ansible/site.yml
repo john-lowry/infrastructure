@@ -3,3 +3,9 @@
   user: centos
   roles: 
     - common
+
+- hosts: tag_Name_proxy
+  user: centos
+  roles:
+    - common
+    - proxy
