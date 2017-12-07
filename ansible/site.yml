@@ -1,5 +1,5 @@
 ---
-- hosts: tag_Name_bastion
+- hosts: all
   user: centos
   roles: 
     - common
