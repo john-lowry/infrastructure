@@ -38,45 +38,6 @@ resource "aws_subnet" "default" {
   }
 }
 
-resource "aws_security_group" "proxy" {
-  name        = "proxy"
-  description = "Security group for proxy servers"
-  vpc_id      = "${aws_vpc.default.id}"
-
-  ingress {
-    from_port   	= 80
-    to_port     	= 80
-    protocol    	= "tcp"
-    security_groups	= ["${aws_security_group.basic.id}"]
-  }
-  
-  ingress {
-    from_port		= 443
-    to_port		= 443
-    protocol		= "tcp"
-    security_groups	= ["${aws_security_group.basic.id}"]
-  }
-
-  ingress {
-    from_port	= 8
-    to_port	= 0
-    protocol	= "icmp"
-    cidr_blocks	= ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "proxy"
-    env = "PROD"
-  }
-}
-
 resource "aws_security_group" "basic" {
   name        = "basic"
   description = "Basic Security Group"
@@ -93,9 +54,7 @@ resource "aws_security_group" "basic" {
     from_port	= 22
     to_port	= 22
     protocol	= "tcp"
-    security_groups	= [
-			"${aws_security_group.bastionhost.id}"
-			]
+    cidr_blocks = [ "0.0.0.0/0" ]
   }
     
 
@@ -105,51 +64,21 @@ resource "aws_security_group" "basic" {
   }
 }
 
-resource "aws_security_group" "bastionhost" {
-  name		= "bastion"
-  description	= "bastion host"
-  vpc_id	= "${aws_vpc.default.id}"
-  
-  ingress {
-    from_port	= 22
-    to_port	= 22
-    protocol 	= "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port	= 8
-    to_port	= 0
-    protocol	= "icmp"
-    cidr_blocks	= ["0.0.0.0/0"]
-  }
-  
-  egress {
-    from_port		= 0
-    to_port		= 0
-    protocol		= -1
-    cidr_blocks		=["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name	= "BastionHost"
-    env		= "PROD"
-  }
-} 
 resource "aws_key_pair" "jlowry" {
   key_name   = "John Lowry"
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCc9cC2xs+EU8awpCf6eAY7S9IGqL6/r1LpV3r5Lo1NCE9gTPofk+ACMKhxnLRxUdqGs0aMA9k1HngJ5oE5PKp9DkE9ZIjryG7UhPfrvsTnU0Ak+Ltx0cXy/1NoWmMDSckCBdeqONRaxdi9kz6H3DCMeQD8Xu5KafWTlbLgdJveEaEDbWlKF0smpvKieeCW+iBjcqA2ZusDvaBKHQRa4CpcSWiI+fsoJXYItZXZFmNYmDiNL9P1bzwa7MSnHN7gRU2yJy6J3Mil69p3bKI347pxbBVUMBT2bSbj/OP6nr6yP85JF8jlJl7XekabqtRNnDW6rOGApufh/4etCh2yBOQ9"
 }
 
-resource "aws_instance" "bastion" {
-  connection {
-    user = "centos"
-  }
+resource "aws_key_pair" "debian-box" {
+  key_name   = "DebianBox"
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCzc3jwiqJOl5QYb0JRnTav17hitSUODL/D5WWODnCBPbxx8W/jYltFKQe/tK08Ls3sUAfGbmYp/MNHlgHEdcJ2MqgmVZEGbByoQpapQVWzQ6zLeTeFPv4e7qVxT4OK8+V/Fi+ezewfBBU5BqqEA6ZRgCZ/ILM0dlyvYQEwOVgP+TZz8UFMqsz24fkoEG8fYVjoibmrqc0Lb9rhpgF30WrSqZVfq7e9/ehmR2ZaQQeSpMw819bkWDAKYXS2Bo1pamd5LD360NfGojDM5QRT8tROwqjtgWMAwQ1qzLl30iFhjRnS2bn8BgmAp0iCLkyMcJJGOyF51FWeedY+2WmBHNhKkGe6igui3ycmkenhh30U+L7R9jd28E7BpjM17bFVOKtYEv4b2MpqSYcNT9k6U6y43bZEc187gc6VMWx0FQuVusgHQX+WK+yUacC0QaJs6YAStI9WVLLdpTviHI91dYw9ewBZ05xqG2VjnWEr1ifrE8nytYroBPeUzlqJ4Itq0LJdDVjCDSqwJ8BFNSJ/SGUF71rUkLciCh9SdG9JxxOeBJcKcnDTe8ycmdXNHSIyCmQbdb0MXsPfQwjXCVYrFi5Xg+pZpFotWcMBE3x7S3wKDs65/hL6y1+9d4ueucHQWtyOMniQOQu+1F0mSGaHEOkh8drNjeDA+tjjJyFxDjHlqQ=="
+}
 
+resource "aws_instance" "dev" {
   instance_type			= "t2.micro"
-  ami				= "ami-0c2aba6c"
-  key_name			= "${aws_key_pair.jlowry.id}"
-  vpc_security_group_ids	= ["${aws_security_group.bastionhost.id}"]
+  ami				= "ami-7f43f307"
+  key_name			= "${aws_key_pair.debian-box.id}"
+  vpc_security_group_ids	= ["${aws_security_group.basic.id}"]
   subnet_id			= "${aws_subnet.default.id}"
 
 
@@ -158,26 +87,3 @@ resource "aws_instance" "bastion" {
     env		= "PROD"
   }
 }
-
-resource "aws_instance" "proxy" {
-  connection {
-    user = "centos"
-    bastion_host = "${aws_instance.bastion.associate_public_ip_address}"
-  }
-
-  instance_type			= "t2.micro"
-  ami				= "ami-0c2aba6c"
-  key_name			= "${aws_key_pair.jlowry.id}"
-  vpc_security_group_ids	= [
-				"${aws_security_group.proxy.id}",
-				"${aws_security_group.basic.id}"
-				]
-  subnet_id			= "${aws_subnet.default.id}"
-  count				= 2
-
-  tags	= {
-    Name	= "proxy"
-    env		= "PROD"
-  }
-}
-
